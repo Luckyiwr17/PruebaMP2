@@ -1,37 +1,66 @@
 const express = require('express');
-const app = express();
+const mysql = require('mysql2/promise');
 
-// Hostinger asignará el puerto automáticamente mediante la variable de entorno
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para entender formato JSON
 app.use(express.json());
 
-// Endpoint que recibirá el Webhook de Mercado Pago
-app.post('/webhook', (req, res) => {
+// Pool de conexiones a MySQL (usa variables de entorno en Render para las credenciales)
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || '174.136.37.110',
+    user: process.env.DB_USER || 'jesystem_adminsys',
+    password: process.env.DB_PASSWORD || 'jesystem_sibase',
+    database: process.env.DB_NAME || 'jesystem_webhook_notificaciones',
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+// Endpoint receptor del Webhook
+app.post('/webhook', async (req, res) => {
     try {
         const data = req.body;
+
+        // Extraer encabezados o IDs opcionales (ejemplo: ID de evento de GitHub)
+        const eventoId = req.headers['x-github-delivery'] || data.id || null;
+        const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
+
+        // Insertar en MySQL
+        const query = `
+            INSERT INTO webhook_notificaciones (evento_id, tipo_evento, payload) 
+            VALUES (?, ?, ?)
+        `;
         
-        // Log para ver en la consola de Hostinger qué está llegando
-        console.log("Notificación Recibida:", JSON.stringify(data));
+        await pool.execute(query, [
+            eventoId, 
+            tipoEvento, 
+            JSON.stringify(data)
+        ]);
 
-        // --- AQUÍ VA TU CONEXIÓN A LA BASE DE DATOS ---
-        // Ejemplo conceptual si usaras Supabase o MySQL:
-        // await guardarEnBaseDatos({ 
-        //    id_pago: data.data.id, 
-        //    topico: data.topic,
-        //    fecha: new Date()
-        // });
+        console.log(`[MySQL] Notificación guardada exitosamente (ID Evento: ${eventoId})`);
 
-        // IMPORTANTE: Responder siempre con un 200 OK a Mercado Pago
         return res.status(200).send('OK');
     } catch (error) {
-        console.error("Error procesando webhook:", error);
+        console.error("Error al guardar en MySQL:", error);
         return res.status(500).send('Internal Error');
     }
 });
 
-// Ruta básica para comprobar que tu servidor está encendido
+// Endpoint opcional si prefieres que VB.NET consulte por HTTP en vez de conectarse directo a MySQL
+app.get('/notificaciones/pendientes', async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            "SELECT id, evento_id, tipo_evento, payload, fecha_creacion FROM webhook_notificaciones WHERE procesado = 0 ORDER BY id ASC LIMIT 50"
+        );
+        return res.status(200).json(rows);
+    } catch (error) {
+        console.error("Error al obtener pendientes:", error);
+        return res.status(500).send('Internal Error');
+    }
+});
+
 app.get('/', (req, res) => {
     res.send('Servidor Webhook de mi PDV Activo');
 });
