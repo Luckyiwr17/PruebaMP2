@@ -24,6 +24,11 @@ app.post('/webhook', async (req, res) => {
         const data = req.body;
         const eventoId = req.headers['x-github-delivery'] || data.id || null;
         const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
+        const id_order = data.id || null;
+        const externalRef = data.external_reference || null;
+        const status = data.status || null;
+        const action = data.action || null;
+        
 
         const query = `
             INSERT INTO webhook_notificaciones (evento_id, tipo_evento, payload) 
@@ -32,6 +37,10 @@ app.post('/webhook', async (req, res) => {
         
         await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
         console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
+        console.log(`[Webhook] Orden ID: ${id_order}`);
+        console.log(`[Webhook] Referencia externa: ${externalRef}`);
+        console.log(`[Webhook] Status: ${status}`);
+        console.log(`[Webhook] Acción: ${action}`);
 
         return res.status(200).send('OK');
     } catch (error) {
