@@ -6,49 +6,41 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Pool de conexiones a MySQL (usa variables de entorno en Render para las credenciales)
+// Conexión a MySQL usando Variables de Entorno
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
+    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
-// Endpoint receptor del Webhook
+// 1. Endpoint Receptor de Webhooks (Guardar evento en MySQL)
 app.post('/webhook', async (req, res) => {
     try {
         const data = req.body;
-
-        // Extraer encabezados o IDs opcionales (ejemplo: ID de evento de GitHub)
         const eventoId = req.headers['x-github-delivery'] || data.id || null;
         const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
 
-        // Insertar en MySQL
         const query = `
             INSERT INTO webhook_notificaciones (evento_id, tipo_evento, payload) 
             VALUES (?, ?, ?)
         `;
         
-        await pool.execute(query, [
-            eventoId, 
-            tipoEvento, 
-            JSON.stringify(data)
-        ]);
-
-        console.log(`[MySQL] Notificación guardada exitosamente (ID Evento: ${eventoId})`);
+        await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
+        console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
 
         return res.status(200).send('OK');
     } catch (error) {
-        console.error("Error al guardar en MySQL:", error);
+        console.error("Error al guardar webhook:", error);
         return res.status(500).send('Internal Error');
     }
 });
 
-// Endpoint opcional si prefieres que VB.NET consulte por HTTP en vez de conectarse directo a MySQL
+// 2. Endpoint GET: VB.NET consulta notificaciones pendientes
 app.get('/notificaciones/pendientes', async (req, res) => {
     try {
         const [rows] = await pool.query(
@@ -56,13 +48,35 @@ app.get('/notificaciones/pendientes', async (req, res) => {
         );
         return res.status(200).json(rows);
     } catch (error) {
-        console.error("Error al obtener pendientes:", error);
+        console.error("Error al obtener notificaciones pendientes:", error);
+        return res.status(500).send('Internal Error');
+    }
+});
+
+// 3. Endpoint POST: VB.NET marca como procesadas las notificaciones
+app.post('/notificaciones/marcar-procesadas', async (req, res) => {
+    try {
+        const { ids } = req.body; // Se espera un array de IDs, ej: [1, 2, 3]
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: "Debe proporcionar una lista de IDs válidos" });
+        }
+
+        // Construir placeholders dinámicos '?, ?, ?' para la consulta SQL
+        const placeholders = ids.map(() => '?').join(',');
+        const query = `UPDATE webhook_notificaciones SET procesado = 1 WHERE id IN (${placeholders})`;
+
+        await pool.execute(query, ids);
+
+        return res.status(200).json({ status: "OK", mensaje: `${ids.length} notificaciones marcadas como procesadas` });
+    } catch (error) {
+        console.error("Error al actualizar estado de notificaciones:", error);
         return res.status(500).send('Internal Error');
     }
 });
 
 app.get('/', (req, res) => {
-    res.send('Servidor Webhook de mi PDV Activo');
+    res.send('Servidor Webhook PDV Activo');
 });
 
 app.listen(PORT, () => {
