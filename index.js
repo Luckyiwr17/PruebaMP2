@@ -21,17 +21,21 @@ const pool = mysql.createPool({
 // 1. Endpoint Receptor de Webhooks (Guardar evento en MySQL)
 app.post('/webhook', async (req, res) => {
     try {
-        const data = req.body;
-        const eventoId = req.headers['x-github-delivery'] || data.id || null;
-        const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
+        const action = req.body.action;
+        const orderId = req.body.id;
+        const typeFromBody = req.body.type;
+        const dataIdFromBody = req.body.data.id;
+
+        const URLorder = req.query['data.id'];
+        const URLtype = req.query.type;
 
         const query = `
-            INSERT INTO webhook_notificaciones (evento_id, tipo_evento, payload) 
-            VALUES (?, ?, ?)
+            INSERT INTO mercadopago_post_notificaciones (action, ir_order_body, type_order_body, data_id_order, url_order, url_type) 
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
         
-        await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
-        console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
+        await pool.execute(query, [action, orderId, typeFromBody, dataIdFromBody, URLorder, URLtype]);
+        console.log(`[Webhook] Notificación guardada exitosamente (ID: ${orderId})`);
 
         return res.status(200).send('OK');
     } catch (error) {
