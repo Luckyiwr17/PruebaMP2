@@ -30,7 +30,7 @@ app.post('/webhook', async (req, res) => {
         const URLtype = req.query.type;
 
         const query = `
-            INSERT INTO mercadopago_post_notificaciones (action, ir_order_body, type_order_body, data_id_order, url_order, url_type) 
+            INSERT INTO mercadopago_post_notificaciones (action, id_order_body, type_order_body, data_id_order, url_order, url_type) 
             VALUES (?, ?, ?, ?, ?, ?)
         `;
         
