@@ -27,7 +27,7 @@ app.post('/webhook', async (req, res) => {
         const id_order = data.data.id || null;
         const externalRef = data.data.external_reference || null;
         const status = data.data.status || null;
-        const action = data.data.action || null;
+        const action = data.action || null;
         
 
         const query = `
