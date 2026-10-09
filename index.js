@@ -29,11 +29,11 @@ app.post('/webhook', async (req, res) => {
         const status = data.data.status || null;
         const action = data.action || null;
         const type_order = data.type || null;
-        const id_pay = data.data.transactions.payments[0].id || null;
-        const pay_type = data.data.transactions.payments[0].payment_method.type || null;
-        const pay_reference = data.data.transactions.payments[0].reference.id || null;
-        const pay_status = data.data.transactions.payments[0].status || null;
-        const pay_status_det = data.data.transactions.payments[0].status_detail || null;
+        const id_pay = data?.transactions?.payments?.[0]?.id || null;
+        const pay_type = data?.transactions?.payments?.[0]?.payment_method?.type || null;
+        const pay_reference = data?.transactions?.payments?.[0]?.reference?.id || null;
+        const pay_status = data?.transactions?.payments?.[0]?.status || null;
+        const pay_status_det = data?.transactions?.payments?.[0]?.status_detail || null;
 
         const query = `
             INSERT INTO mercadopago_pagos_notificaciones (action, id_order, type_order, external_reference, status) 
