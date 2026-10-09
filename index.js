@@ -44,9 +44,12 @@ app.post('/webhook', async (req, res) => {
         valores.push(`ts:${ts}`);
         const manifest = valores.join(';') + ';';
 
+        console.log(`[Webhook] Inicio de comprobación...`);
+
         const computed = crypto.createHmac('sha256', process.env.MP_SKEY).update(manifest).digest('hex');
         if(!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1))) {
-            return res.status(401).send('Error de validación de claves: Notificación no legítima');
+            console.log(`[Webhook] Validación no procesada`);
+            return res.sendStatus(401);
         }
 
         const id_order = data.data.id || null;
