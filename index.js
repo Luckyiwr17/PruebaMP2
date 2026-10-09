@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +23,13 @@ const pool = mysql.createPool({
 app.post('/webhook', async (req, res) => {
     try {
         const data = req.body;
-        const datos1 = req.body;
-        const eventoId = req.headers['x-github-delivery'] || data.id || null;
-        const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
+        
+        const dataID = (req.query['data.id'] ?? '').toLowerCase(); //id en minúsculas
+        const xRequestId = req.headers['x-request-id'] ?? '';
+        // const eventoId = req.headers['x-github-delivery'] || data.id || null;
+        // const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
+
+        //Validación de la notificación: usar hmac sha256
         const signature_values = req.headers['x-signature'] || null;
         const parts = Object.fromEntries(
             signature_values.split(",").map(kv => kv.split("=").map(s => s.trim()))
@@ -33,6 +38,17 @@ app.post('/webhook', async (req, res) => {
         const ts = parts.ts;
         const v1 = parts.v1;
         
+        const valores = [];
+        valores.push(`id:${dataID}`);
+        valores.push(`request-id:${xRequestId}`);
+        valores.push(`ts:${ts}`);
+        const manifest = parts.join(';') + ';';
+
+        const computed = crypto.createHmac('sha256', process.env.MP_SKEY).update(manifest).digest('hex');
+        if(!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1))) {
+            return res.status(401).send('Error de validación de claves: Notificación no legítima');
+        }
+
         const id_order = data.data.id || null;
         const externalRef = data.data.external_reference || null;
         const status = data.data.status || null;
@@ -51,7 +67,7 @@ app.post('/webhook', async (req, res) => {
         
         //await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
         await pool.execute(query, [action, id_order, type_order, externalRef, status])
-        console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
+        console.log(`[Webhook] Notificación guardada exitosamente`);
         console.log(`[Valor TS] Para ver si es el correcto: (ts: ${ts})`);
         console.log(`[Valor V1] Para ver si es el correcto: (v1: ${v1})`);
         console.log(`[Webhook] Orden ID: ${id_order}`);
