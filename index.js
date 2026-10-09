@@ -28,19 +28,33 @@ app.post('/webhook', async (req, res) => {
         const externalRef = data.data.external_reference || null;
         const status = data.data.status || null;
         const action = data.action || null;
-        
+        const type_order = data.type || null;
+        const id_pay = data.data.transactions.payments[0].id || null;
+        const pay_type = data.data.transactions.payments[0].payment_method.type || null;
+        const pay_reference = data.data.transactions.payments[1].id || null;
+        const pay_status = data.data.transactions.payments[2].status || null;
+        const pay_status_det = data.data.transactions.payments[3].status_detail || null;
 
         const query = `
-            INSERT INTO webhook_notificaciones (evento_id, tipo_evento, payload) 
-            VALUES (?, ?, ?)
+            INSERT INTO mercadopago_pagos_notificaciones (action, id_order, type_order, external_reference, status) 
+            VALUES (?, ?, ?, ?, ?)
         `;
         
-        await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
+        //await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
+        await pool.execute(query, [action, id_order, type_order, externalRef, status])
         console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
         console.log(`[Webhook] Orden ID: ${id_order}`);
         console.log(`[Webhook] Referencia externa: ${externalRef}`);
         console.log(`[Webhook] Status: ${status}`);
         console.log(`[Webhook] Acción: ${action}`);
+        console.log(`[Webhook] Tipo orden: ${type_order}`);
+        console.log(`[Webhook] DATOS PAGO:`);
+        console.log(`[Webhook] Pago ID: ${id_pay}`);
+        console.log(`[Webhook] Tipo pago: ${pay_type}`);
+        console.log(`[Webhook] Referencia pago: ${pay_reference}`);
+        console.log(`[Webhook] Status pago: ${pay_status}`);
+        console.log(`[Webhook] Status detalle pago: ${pay_status_det}`);
+        
 
         return res.status(200).send('OK');
     } catch (error) {
