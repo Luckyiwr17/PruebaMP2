@@ -23,13 +23,10 @@ const pool = mysql.createPool({
 app.post('/webhook', async (req, res) => {
     try {
         const data = req.body;
-        
+
+//#region "Validación de clave y pago"
         const dataID = (req.query['data.id'] ?? '').toLowerCase(); //id en minúsculas
         const xRequestId = req.headers['x-request-id'] ?? '';
-        // const eventoId = req.headers['x-github-delivery'] || data.id || null;
-        // const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
-
-        //Validación de la notificación: usar hmac sha256
         const signature_values = req.headers['x-signature'] || null;
         const parts = Object.fromEntries(
             signature_values.split(",").map(kv => kv.split("=").map(s => s.trim()))
@@ -44,47 +41,36 @@ app.post('/webhook', async (req, res) => {
         valores.push(`ts:${ts}`);
         const manifest = valores.join(';') + ';';
 
-        console.log(`[Webhook] Inicio de comprobación...`);
-
         const computed = crypto.createHmac('sha256', process.env.MP_SKEY).update(manifest).digest('hex');
         if(!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1))) {
-            console.log(`[Webhook] Validación no procesada`);
+            //mandar un valor a SQL de pago no aprobado por verificación de claves
             return res.sendStatus(401);
         }
+//#endregion
 
         const id_order = data.data.id || null;
         const externalRef = data.data.external_reference || null;
         const status = data.data.status || null;
         const action = data.action || null;
         const type_order = data.type || null;
-        const id_pay = data?.transactions?.payments?.[0]?.id || null;
-        const pay_type = data?.transactions?.payments?.[0]?.payment_method?.type || null;
-        const pay_reference = data?.transactions?.payments?.[0]?.reference?.id || null;
-        const pay_status = data?.transactions?.payments?.[0]?.status || null;
-        const pay_status_det = data?.transactions?.payments?.[0]?.status_detail || null;
+        
+        const date_created = data.date_created || null;
+        const [fecha, hora] = date_created.split(T);
+        hora = hora.replace('Z', '');
 
         const query = `
-            INSERT INTO mercadopago_pagos_notificaciones (action, id_order, type_order, external_reference, status) 
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO mercadopago_pagos_notificaciones 
+            (action, id_order, type_order, external_reference, status, date_created, time_created) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        
-        //await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
-        await pool.execute(query, [action, id_order, type_order, externalRef, status])
+
+        await pool.execute(query, [action, id_order, type_order, externalRef, status, fecha, hora])
         console.log(`[Webhook] Notificación guardada exitosamente`);
-        console.log(`[Valor TS] Para ver si es el correcto: (ts: ${ts})`);
-        console.log(`[Valor V1] Para ver si es el correcto: (v1: ${v1})`);
         console.log(`[Webhook] Orden ID: ${id_order}`);
         console.log(`[Webhook] Referencia externa: ${externalRef}`);
         console.log(`[Webhook] Status: ${status}`);
         console.log(`[Webhook] Acción: ${action}`);
         console.log(`[Webhook] Tipo orden: ${type_order}`);
-        console.log(`[Webhook] DATOS PAGO:`);
-        console.log(`[Webhook] Pago ID: ${id_pay}`);
-        console.log(`[Webhook] Tipo pago: ${pay_type}`);
-        console.log(`[Webhook] Referencia pago: ${pay_reference}`);
-        console.log(`[Webhook] Status pago: ${pay_status}`);
-        console.log(`[Webhook] Status detalle pago: ${pay_status_det}`);
-        
 
         return res.status(200).send('OK');
     } catch (error) {
