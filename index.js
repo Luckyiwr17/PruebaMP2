@@ -42,7 +42,7 @@ app.post('/webhook', async (req, res) => {
         valores.push(`id:${dataID}`);
         valores.push(`request-id:${xRequestId}`);
         valores.push(`ts:${ts}`);
-        const manifest = parts.join(';') + ';';
+        const manifest = valores.join(';') + ';';
 
         const computed = crypto.createHmac('sha256', process.env.MP_SKEY).update(manifest).digest('hex');
         if(!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1))) {
