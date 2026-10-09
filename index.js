@@ -24,7 +24,13 @@ app.post('/webhook', async (req, res) => {
         const data = req.body;
         const eventoId = req.headers['x-github-delivery'] || data.id || null;
         const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
-        const ts_values = req.headers['X-Signature'] || null;
+        const signature_values = req.headers['x-signature'] || null;
+        const parts = Object.fromEntities{
+            signature_values.split(",").map(kv => kv.split("=").map(s => s.trim()))
+        };
+
+        const ts = parts.ts;
+        const v1 = parts.v1;
         
         const id_order = data.data.id || null;
         const externalRef = data.data.external_reference || null;
@@ -45,7 +51,8 @@ app.post('/webhook', async (req, res) => {
         //await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
         await pool.execute(query, [action, id_order, type_order, externalRef, status])
         console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
-        console.log(`[Valor TS] Para ver si es el correcto: (ts: ${ts_values})`);
+        console.log(`[Valor TS] Para ver si es el correcto: (ts: ${ts})`);
+        console.log(`[Valor V1] Para ver si es el correcto: (v1: ${v1})`);
         console.log(`[Webhook] Orden ID: ${id_order}`);
         console.log(`[Webhook] Referencia externa: ${externalRef}`);
         console.log(`[Webhook] Status: ${status}`);
