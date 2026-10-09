@@ -25,9 +25,9 @@ app.post('/webhook', async (req, res) => {
         const eventoId = req.headers['x-github-delivery'] || data.id || null;
         const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
         const signature_values = req.headers['x-signature'] || null;
-        const parts = Object.fromEntries{
+        const parts = Object.fromEntries(
             signature_values.split(",").map(kv => kv.split("=").map(s => s.trim()))
-        };
+        );
 
         const ts = parts.ts;
         const v1 = parts.v1;
