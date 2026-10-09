@@ -24,6 +24,8 @@ app.post('/webhook', async (req, res) => {
         const data = req.body;
         const eventoId = req.headers['x-github-delivery'] || data.id || null;
         const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
+        const ts_values = req.headers['X-Signature'] || null;
+        
         const id_order = data.data.id || null;
         const externalRef = data.data.external_reference || null;
         const status = data.data.status || null;
@@ -43,6 +45,7 @@ app.post('/webhook', async (req, res) => {
         //await pool.execute(query, [eventoId, tipoEvento, JSON.stringify(data)]);
         await pool.execute(query, [action, id_order, type_order, externalRef, status])
         console.log(`[Webhook] Notificación guardada exitosamente (ID: ${eventoId})`);
+        console.log(`[Valor TS] Para ver si es el correcto: (ts: ${ts_values})`);
         console.log(`[Webhook] Orden ID: ${id_order}`);
         console.log(`[Webhook] Referencia externa: ${externalRef}`);
         console.log(`[Webhook] Status: ${status}`);
