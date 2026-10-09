@@ -22,6 +22,7 @@ const pool = mysql.createPool({
 app.post('/webhook', async (req, res) => {
     try {
         const data = req.body;
+        const datos1 = req.body;
         const eventoId = req.headers['x-github-delivery'] || data.id || null;
         const tipoEvento = req.headers['x-github-event'] || data.action || 'webhook';
         const signature_values = req.headers['x-signature'] || null;
