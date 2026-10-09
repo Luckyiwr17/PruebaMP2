@@ -55,7 +55,7 @@ app.post('/webhook', async (req, res) => {
         const type_order = data.type || null;
         
         const date_created = data.date_created || null;
-        const [fecha, hora] = date_created.split(T);
+        const [fecha, hora] = date_created.split('T');
         hora = hora.replace('Z', '');
 
         const query = `
