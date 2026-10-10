@@ -55,18 +55,16 @@ app.post('/webhook', async (req, res) => {
         const type_order = data.type || null;
         
         const date_created = data.date_created || null;
-        console.log(`Hora creada: ${date_created}`);
         const dia_creado = date_created.split('T')[0];
-        const tiempo_Z = date_created.split('T')[1];
-        const tiempo_creado = tiempo_Z.replace('Z', '');
 
         const query = `
             INSERT INTO mercadopago_pagos_notificaciones 
-            (action, id_order, type_order, external_reference, status, date_created, time_created) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (action, id_order, type_order, external_reference, status, date_created) 
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
 
-        await pool.execute(query, [action, id_order, type_order, externalRef, status, dia_creado, tiempo_creado])
+        await pool.execute(query, [action, id_order, type_order, externalRef, status, dia_creado])
+        
         console.log(`[Webhook] Notificación guardada exitosamente`);
         console.log(`[Webhook] Orden ID: ${id_order}`);
         console.log(`[Webhook] Referencia externa: ${externalRef}`);
