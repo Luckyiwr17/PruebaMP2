@@ -24,53 +24,54 @@ app.post('/webhook', async (req, res) => {
     try {
         const data = req.body;
 
+        console.log("Datos de la simulación enviada por Mercado Pago:", data);
 //#region "Validación de clave y pago"
-        const dataID = (req.query['data.id'] ?? '').toLowerCase(); //id en minúsculas
-        const xRequestId = req.headers['x-request-id'] ?? '';
-        const signature_values = req.headers['x-signature'] || null;
-        const parts = Object.fromEntries(
-            signature_values.split(",").map(kv => kv.split("=").map(s => s.trim()))
-        );
+        // const dataID = (req.query['data.id'] ?? '').toLowerCase(); //id en minúsculas
+        // const xRequestId = req.headers['x-request-id'] ?? '';
+        // const signature_values = req.headers['x-signature'] || null;
+        // const parts = Object.fromEntries(
+        //     signature_values.split(",").map(kv => kv.split("=").map(s => s.trim()))
+        // );
 
-        const ts = parts.ts;
-        const v1 = parts.v1;
+        // const ts = parts.ts;
+        // const v1 = parts.v1;
         
-        const valores = [];
-        valores.push(`id:${dataID}`);
-        valores.push(`request-id:${xRequestId}`);
-        valores.push(`ts:${ts}`);
-        const manifest = valores.join(';') + ';';
+        // const valores = [];
+        // valores.push(`id:${dataID}`);
+        // valores.push(`request-id:${xRequestId}`);
+        // valores.push(`ts:${ts}`);
+        // const manifest = valores.join(';') + ';';
 
-        const computed = crypto.createHmac('sha256', process.env.MP_SKEY).update(manifest).digest('hex');
-        if(!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1))) {
-            //mandar un valor a SQL de pago no aprobado por verificación de claves
-            return res.sendStatus(401);
-        }
+        // const computed = crypto.createHmac('sha256', process.env.MP_SKEY).update(manifest).digest('hex');
+        // if(!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1))) {
+        //     //mandar un valor a SQL de pago no aprobado por verificación de claves
+        //     return res.sendStatus(401);
+        // }
 //#endregion
 
-        const id_order = data.data.id || null;
-        const externalRef = data.data.external_reference || null;
-        const status = data.data.status || null;
-        const action = data.action || null;
-        const type_order = data.type || null;
+        // const id_order = data.data.id || null;
+        // const externalRef = data.data.external_reference || null;
+        // const status = data.data.status || null;
+        // const action = data.action || null;
+        // const type_order = data.type || null;
         
-        const date_created = data.date_created || null;
-        const dia_creado = date_created.split('T')[0];
+        // const date_created = data.date_created || null;
+        // const dia_creado = date_created.split('T')[0];
 
-        const query = `
-            INSERT INTO mercadopago_pagos_notificaciones 
-            (action, id_order, type_order, external_reference, status, date_created) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        `;
+        // const query = `
+        //     INSERT INTO mercadopago_pagos_notificaciones 
+        //     (action, id_order, type_order, external_reference, status, date_created) 
+        //     VALUES (?, ?, ?, ?, ?, ?)
+        // `;
 
-        await pool.execute(query, [action, id_order, type_order, externalRef, status, dia_creado])
+        // await pool.execute(query, [action, id_order, type_order, externalRef, status, dia_creado])
         
-        console.log(`[Webhook] Notificación guardada exitosamente`);
-        console.log(`[Webhook] Orden ID: ${id_order}`);
-        console.log(`[Webhook] Referencia externa: ${externalRef}`);
-        console.log(`[Webhook] Status: ${status}`);
-        console.log(`[Webhook] Acción: ${action}`);
-        console.log(`[Webhook] Tipo orden: ${type_order}`);
+        // console.log(`[Webhook] Notificación guardada exitosamente`);
+        // console.log(`[Webhook] Orden ID: ${id_order}`);
+        // console.log(`[Webhook] Referencia externa: ${externalRef}`);
+        // console.log(`[Webhook] Status: ${status}`);
+        // console.log(`[Webhook] Acción: ${action}`);
+        // console.log(`[Webhook] Tipo orden: ${type_order}`);
 
         return res.status(200).send('OK');
     } catch (error) {
