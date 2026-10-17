@@ -22,8 +22,10 @@ const pool = mysql.createPool({
 // 1. Endpoint Receptor de Webhooks (Guardar evento en MySQL)
 app.post('/webhook', async (req, res) => {
     try {
-        const data = req;
+        const dataH = req.headers;
+        const data = req.body;
 
+        console.log("Cabecera de la simulación: ", dataH)
         console.log("Datos de la simulación enviada por Mercado Pago:", data);
 //#region "Validación de clave y pago"
         // const dataID = (req.query['data.id'] ?? '').toLowerCase(); //id en minúsculas
