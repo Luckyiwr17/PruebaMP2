@@ -24,9 +24,13 @@ app.post('/webhook', async (req, res) => {
     try {
         const dataH = req.headers;
         const data = req.body;
+        const typeReq = req.type || null;
+        const topicReq = req.topic || null;
 
-        console.log("Cabecera de la simulación: ", dataH)
+        console.log("Cabecera de la simulación: ", dataH);
         console.log("Datos de la simulación enviada por Mercado Pago:", data);
+        console.log("Topic:", topicReq);
+        console.log("Type: ", typeReq);
 //#region "Validación de clave y pago"
         // const dataID = (req.query['data.id'] ?? '').toLowerCase(); //id en minúsculas
         // const xRequestId = req.headers['x-request-id'] ?? '';
