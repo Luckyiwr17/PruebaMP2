@@ -27,8 +27,11 @@ app.post('/webhook', async (req, res) => {
         const typeReq = req.type || null;
         const topicReq = req.topic || null;
 
+        const listPay = data.data.transactions.payments[0] || null;
+
         console.log("Cabecera de la simulación: ", dataH);
         console.log("Datos de la simulación enviada por Mercado Pago:", data);
+        console.log("Datos pago: ", listPay);
         console.log("Topic:", topicReq);
         console.log("Type: ", typeReq);
 //#region "Validación de clave y pago"
