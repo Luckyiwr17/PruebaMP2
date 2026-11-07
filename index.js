@@ -27,13 +27,13 @@ app.post('/webhook', async (req, res) => {
         const typeReq = data.type || null;
         const topicReq = data.topic || null;
 
-        const listPay = data.data.transactions.payments[0] || null;
-        const reference = listPay.reference.id;
+        //const listPay = data.data.transactions.payments[0] || null;
+        //const reference = listPay.reference.id;
 
         console.log("Cabecera de la simulación: ", dataH);
         console.log("Datos de la simulación enviada por Mercado Pago:", data);
-        console.log("Datos pago: ", listPay);
-        console.log("Referencia: ", reference);
+        //console.log("Datos pago: ", listPay);
+        //console.log("Referencia: ", reference);
         console.log("Topic:", topicReq);
         console.log("Type: ", typeReq);
 //#region "Validación de clave y pago"
