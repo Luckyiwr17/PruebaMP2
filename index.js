@@ -24,8 +24,8 @@ app.post('/webhook', async (req, res) => {
     try {
         const dataH = req.headers;
         const data = req.body;
-        const typeReq = req.type || null;
-        const topicReq = req.topic || null;
+        const typeReq = data.type || null;
+        const topicReq = data.topic || null;
 
         const listPay = data.data.transactions.payments[0] || null;
         const reference = listPay.reference.id;
